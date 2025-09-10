@@ -9,7 +9,7 @@ import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import MyOrders from "./pages/MyOrders.jsx";
 import Home from "./pages/Home.jsx";
-import Checkout from "./pages/Checkout.jsx"
+import Checkout from "./pages/Checkout.jsx";
 import Profile from "./pages/Profile.jsx";
 import { CartProvider, useCart } from "./context/CartContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
@@ -18,10 +18,10 @@ import { Toaster } from "react-hot-toast";
 // ---------- Nav items ----------
 const navItems = [
   { to: "/", label: "Home" },
-  {to: "/Products", label: "Products"},
+  { to: "/Products", label: "Products" },
   { to: "/cart", label: "Cart" },
   { to: "/my-orders", label: "My Orders" },
-  {to: "/profilo",label: "Profile"}
+  { to: "/profilo", label: "Profile" },
 ];
 
 // ---------- Animated NavLink with gradient header support ----------
@@ -56,7 +56,6 @@ function AnimatedLink({ to, children, onClick }) {
 function UserMenu() {
   const { user, logout } = useAuth();
 
-  // Logged out: show Login / Signup
   if (!user) {
     return (
       <div className="hidden sm:flex gap-2">
@@ -66,27 +65,19 @@ function UserMenu() {
     );
   }
 
-  // Logged in: inline greeting + Logout button
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-white/90">Hi, {user.name}</span>
-      <button
-        onClick={logout}
-        className="rounded-xl bg-emerald-200/20 px-3 py-1.5 text-sm text-white
-                   hover:bg-emerald-200/30 focus-visible:outline-none
-                   focus-visible:ring-2 focus-visible:ring-emerald-300"
-      >
-        Logout
-      </button>
+      
     </div>
   );
 }
 
-
-// ---------- Mobile menu (hamburger → X) ----------
+// ---------- Mobile menu (overlay, does NOT push navbar) ----------
+// ---------- Mobile menu (overlay, does NOT push navbar) ----------
 function MobileMenu() {
   const [open, setOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth(); // ✅ add logout here
 
   const baseItems = user
     ? navItems
@@ -127,29 +118,55 @@ function MobileMenu() {
         </div>
       </button>
 
-      {/* Dropdown */}
+      {/* Overlay + Panel */}
       <AnimatePresence>
         {open && (
-          <motion.nav
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="mt-3 overflow-hidden rounded-2xl border border-emerald-200/30 bg-emerald-900/80 p-4 text-white backdrop-blur"
-          >
-            <div className="flex flex-col gap-3">
-              {menuItems.map((n) => (
-                <AnimatedLink
-                  key={n.to}
-                  to={n.to}
-                  onClick={() => setOpen(false)}
-                >
-                  <span className="block w-full rounded-lg bg-emerald-700/40 px-3 py-2 text-center text-base hover:bg-emerald-600/60">
-                    {n.label}
-                  </span>
-                </AnimatedLink>
-              ))}
-            </div>
-          </motion.nav>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+            />
+
+            {/* Menu */}
+            <motion.nav
+              className="fixed left-3 right-3 top-16 z-50 rounded-2xl border border-emerald-200/40 bg-emerald-900/90 p-4 text-white shadow-xl"
+              initial={{ y: -8, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            >
+              <div className="flex flex-col gap-3">
+                {menuItems.map((n) => (
+                  <AnimatedLink
+                    key={n.to}
+                    to={n.to}
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="block w-full rounded-lg bg-emerald-700/40 px-3 py-2 text-center text-base hover:bg-emerald-600/60">
+                      {n.label}
+                    </span>
+                  </AnimatedLink>
+                ))}
+
+                {/* ✅ Logout only if logged in */}
+                {user && (
+                  <button
+                    onClick={() => {
+                      logout();
+                      setOpen(false);
+                    }}
+                    className="mt-2 w-full rounded-lg bg-red-600/80 px-3 py-2 text-center text-base font-semibold hover:bg-red-700/90"
+                  >
+                    Logout
+                  </button>
+                )}
+              </div>
+            </motion.nav>
+          </>
         )}
       </AnimatePresence>
     </div>
@@ -161,9 +178,11 @@ function MobileMenu() {
 function Header() {
   const { items = [] } = useCart();
   const count = items.reduce((acc, it) => acc + (it.qty || 1), 0);
-  const { user } = useAuth();    
-  const items2 = user ? navItems                        // ✅ filter the list
-                     : navItems.filter(n => n.to !== "/my-orders" && n.to!=="/profilo");
+  const { user } = useAuth();
+  const items2 = user
+    ? navItems
+    : navItems.filter((n) => n.to !== "/my-orders" && n.to !== "/profilo");
+
   return (
     <motion.header
       initial={{ y: -24, opacity: 0 }}
@@ -187,15 +206,15 @@ function Header() {
         <LayoutGroup>
           <nav className="hidden gap-2 sm:flex">
             {items2.map((n) => (
-            <AnimatedLink key={n.to} to={n.to}>
-              {n.label}
-              {n.to === "/cart" && (
-                <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-white/25 px-1.5 text-xs font-semibold text-white">
-                  {count}
-                </span>
-              )}
-            </AnimatedLink>
-          ))}
+              <AnimatedLink key={n.to} to={n.to}>
+                {n.label}
+                {n.to === "/cart" && (
+                  <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-white/25 px-1.5 text-xs font-semibold text-white">
+                    {count}
+                  </span>
+                )}
+              </AnimatedLink>
+            ))}
           </nav>
         </LayoutGroup>
 
@@ -290,7 +309,7 @@ export default function App() {
                   </PageTransition>
                 }
               />
-               <Route
+              <Route
                 path="/Products"
                 element={
                   <PageTransition>
@@ -298,7 +317,7 @@ export default function App() {
                   </PageTransition>
                 }
               />
-               <Route
+              <Route
                 path="/profilo"
                 element={
                   <PageTransition>
@@ -306,7 +325,7 @@ export default function App() {
                   </PageTransition>
                 }
               />
-               <Route
+              <Route
                 path="/Checkout"
                 element={
                   <PageTransition>
@@ -323,10 +342,8 @@ export default function App() {
 }
 
 /*
-Fresh green theme applied:
-- App background uses emerald→teal→cyan gradient.
-- Header uses matching emerald/teal/cyan gradient.
-- Nav active pill is emerald tinted.
-- User menu + mobile nav use emerald semi-transparent backgrounds.
-- Buttons and hover states consistent with green theme.
+Mobile menu now uses a fixed overlay:
+- Backdrop: fixed inset-0 (z-40)
+- Panel: fixed top-16, left/right padding (z-50)
+This keeps the header height constant and prevents the navbar from dropping.
 */
