@@ -151,7 +151,7 @@ function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <motion.img
-            src="src/assets/download.png"
+            src="assets/download.png"
             alt="Shop Logo"
             initial={{ rotate: -10, scale: 0.9, opacity: 0 }}
             animate={{ rotate: 0, scale: 1, opacity: 1 }}
