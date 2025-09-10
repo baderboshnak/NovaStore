@@ -40,6 +40,7 @@ export default function MyOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const invoiceRef = useRef(null);
@@ -63,7 +64,8 @@ export default function MyOrders() {
   const rows = useMemo(
     () =>
       [...orders].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       ),
     [orders]
   );
@@ -97,7 +99,6 @@ export default function MyOrders() {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
-    // Scale image to full page width, paginate if taller than one page
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -105,6 +106,7 @@ export default function MyOrders() {
     let remaining = imgHeight;
 
     pdf.addImage(imgData, "PNG", 0, y, imgWidth, imgHeight);
+
     // If taller than one page, add more pages by shifting the image up
     while (remaining > pageHeight) {
       remaining -= pageHeight;
@@ -157,10 +159,18 @@ export default function MyOrders() {
             <tbody className="divide-y divide-emerald-100/70 text-gray-800">
               {rows.map((o) => (
                 <tr key={o._id} className="[&>td]:px-4 [&>td]:py-3">
-                  <td className="font-medium text-emerald-800">#{o._id.slice(-6)}</td>
-                  <td>{o.createdAt ? new Date(o.createdAt).toLocaleString() : ""}</td>
-                  <td><StatusChip status={o.status} /></td>
-                  <td className="text-right font-semibold">{currency(o.total)}</td>
+                  <td className="font-medium text-emerald-800">
+                    #{o._id.slice(-6)}
+                  </td>
+                  <td>
+                    {o.createdAt ? new Date(o.createdAt).toLocaleString() : ""}
+                  </td>
+                  <td>
+                    <StatusChip status={o.status} />
+                  </td>
+                  <td className="text-right font-semibold">
+                    {currency(o.total)}
+                  </td>
                   <td className="text-right">
                     <button
                       onClick={() => openInvoice(o)}
@@ -198,16 +208,23 @@ export default function MyOrders() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-emerald-800">{COMPANY.name}</h2>
+                    <h2 className="text-xl font-bold text-emerald-800">
+                      {COMPANY.name}
+                    </h2>
                     <div className="text-xs text-gray-600">
                       {COMPANY.address} • {COMPANY.phone} • {COMPANY.email}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-700">INVOICE</div>
+                    <div className="text-sm font-semibold text-gray-700">
+                      INVOICE
+                    </div>
                     <div className="text-xs text-gray-500">
-                      #{selected._id} <br />
-                      {selected.createdAt ? new Date(selected.createdAt).toLocaleString() : ""}
+                      #{selected._id}
+                      <br />
+                      {selected.createdAt
+                        ? new Date(selected.createdAt).toLocaleString()
+                        : ""}
                     </div>
                   </div>
                 </div>
@@ -217,75 +234,132 @@ export default function MyOrders() {
                 {/* Bill to & Order info */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl bg-emerald-50 p-3">
-                    <div className="text-sm font-semibold text-emerald-800">Bill To</div>
+                    <div className="text-sm font-semibold text-emerald-800">
+                      Bill To
+                    </div>
                     <div className="text-sm text-gray-700">
-                      {user?.name || "Customer"} <br />
-                      {user?.email} <br />
+                      {user?.name || "Customer"}
+                      <br />
+                      {user?.email}
+                      <br />
                       {user?.address || "—"}
                     </div>
                   </div>
                   <div className="rounded-xl bg-emerald-50 p-3">
-                    <div className="text-sm font-semibold text-emerald-800">Order Info</div>
+                    <div className="text-sm font-semibold text-emerald-800">
+                      Order Info
+                    </div>
                     <div className="text-sm text-gray-700">
-                      Payment: {paymentLabel(selected.payment)} <br />
+                      Payment: {paymentLabel(selected.payment)}
+                      <br />
                       Status: {selected.status}
                     </div>
                   </div>
                 </div>
 
-                {/* Items (better aligned) */}
-<div className="mt-5 overflow-hidden rounded-xl border border-emerald-100">
-  <table className="w-full text-sm table-fixed">
-    {/* 🔧 lock column widths */}
-    <colgroup>
-      <col className="w-[58%]" />  {/* Product */}
-      <col className="w-[12%]" />  {/* Qty */}
-      <col className="w-[15%]" />  {/* Price */}
-      <col className="w-[15%]" />  {/* Subtotal */}
-    </colgroup>
+                {/* Items – mobile cards + desktop table */}
+                <div className="mt-5">
+                  {/* Mobile (no collisions) */}
+                  <div className="md:hidden space-y-3">
+                    {(selected.items || []).map((it, idx) => {
+                      const qty = Math.max(1, it.qty || 1);
+                      const price = Number(it.price);
+                      const sub = price * qty;
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-emerald-100 p-3 bg-white"
+                        >
+                          <div className="text-sm font-medium text-emerald-900 break-words">
+                            {it.title}
+                          </div>
 
-    <thead className="bg-emerald-50 text-emerald-900">
-      <tr className="[&>th]:px-4 [&>th]:py-2.5">
-        <th className="text-left">Product</th>
-        <th className="text-right">Qty</th>
-        <th className="text-right">Price</th>
-        <th className="text-right">Subtotal</th>
-      </tr>
-    </thead>
+                          <div className="mt-2 flex items-center justify-between text-sm">
+                            <div className="text-gray-600">
+                              <span className="font-mono tabular-nums">
+                                {qty}
+                              </span>
+                              <span> × </span>
+                              <span className="font-mono tabular-nums whitespace-nowrap">
+                                {currency(price)}
+                              </span>
+                            </div>
+                            <div className="font-semibold text-emerald-700 font-mono tabular-nums whitespace-nowrap">
+                              {currency(sub)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
 
-    <tbody className="divide-y divide-emerald-100 text-gray-800">
-      {(selected.items || []).map((it, idx) => {
-        const qty = Math.max(1, it.qty || 1);
-        const price = Number(it.price);
-        const sub = price * qty;
-        return (
-          <tr key={idx} className="[&>td]:px-4 [&>td]:py-2.5">
-            <td className="pr-4 break-words">{it.title}</td>
-            <td className="text-right tabular-nums">{qty}</td>
-            <td className="text-right tabular-nums whitespace-nowrap">{currency(price)}</td>
-            <td className="text-right tabular-nums font-medium whitespace-nowrap">
-              {currency(sub)}
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
+                    {/* Total (mobile) */}
+                    <div className="rounded-xl border border-emerald-100 p-3 bg-emerald-50/60 flex items-center justify-between">
+                      <div className="text-sm font-semibold text-emerald-900">
+                        Total
+                      </div>
+                      <div className="text-base font-bold text-emerald-700 font-mono tabular-nums whitespace-nowrap">
+                        {currency(selected.total)}
+                      </div>
+                    </div>
+                  </div>
 
-    <tfoot>
-      <tr className="[&>td]:px-4 [&>td]:py-2.5">
-        <td colSpan={3} className="text-right font-semibold">Total</td>
-        <td className="text-right font-bold text-emerald-700 tabular-nums whitespace-nowrap">
-          {currency(selected.total)}
-        </td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
-
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-hidden rounded-xl border border-emerald-100 bg-white">
+                    <table className="w-full text-sm table-fixed">
+                      {/* 🔧 lock column widths */}
+                      <colgroup>
+                        <col className="w-[58%]" /> {/* Product */}
+                        <col className="w-[12%]" /> {/* Qty */}
+                        <col className="w-[15%]" /> {/* Price */}
+                        <col className="w-[15%]" /> {/* Subtotal */}
+                      </colgroup>
+                      <thead className="bg-emerald-50 text-emerald-900">
+                        <tr className="[&>th]:px-4 [&>th]:py-2.5">
+                          <th className="text-left">Product</th>
+                          <th className="text-right">Qty</th>
+                          <th className="text-right">Price</th>
+                          <th className="text-right">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-emerald-100 text-gray-800">
+                        {(selected.items || []).map((it, idx) => {
+                          const qty = Math.max(1, it.qty || 1);
+                          const price = Number(it.price);
+                          const sub = price * qty;
+                          return (
+                            <tr key={idx} className="[&>td]:px-4 [&>td]:py-2.5">
+                              <td className="pr-4 break-words">{it.title}</td>
+                              <td className="text-right font-mono tabular-nums">
+                                {qty}
+                              </td>
+                              <td className="text-right font-mono tabular-nums whitespace-nowrap">
+                                {currency(price)}
+                              </td>
+                              <td className="text-right font-mono tabular-nums font-medium whitespace-nowrap">
+                                {currency(sub)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="[&>td]:px-4 [&>td]:py-2.5">
+                          <td colSpan={3} className="text-right font-semibold">
+                            Total
+                          </td>
+                          <td className="text-right font-bold text-emerald-700 font-mono tabular-nums whitespace-nowrap">
+                            {currency(selected.total)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
 
                 {/* Footer / contacts */}
                 <div className="mt-5 text-center text-xs text-gray-500">
-                  Thank you for shopping at {COMPANY.name}. For support contact {COMPANY.email}.
+                  Thank you for shopping at {COMPANY.name}. For support contact{" "}
+                  {COMPANY.email}.
                 </div>
               </div>
 
