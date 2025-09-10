@@ -86,11 +86,23 @@ function UserMenu() {
 // ---------- Mobile menu (hamburger → X) ----------
 function MobileMenu() {
   const [open, setOpen] = useState(false);
-  const { user } = useAuth();    
-  const items = user ? navItems                        // ✅ filter the list
-                     : navItems.filter(n => n.to !== "/my-orders" && n.to !== "/profilo");
+  const { user } = useAuth();
+
+  const baseItems = user
+    ? navItems
+    : navItems.filter((n) => n.to !== "/my-orders" && n.to !== "/profilo");
+
+  const menuItems = user
+    ? baseItems
+    : [
+        ...baseItems,
+        { to: "/login", label: "Login" },
+        { to: "/signup", label: "Signup" },
+      ];
+
   return (
     <div className="sm:hidden">
+      {/* Hamburger button */}
       <button
         onClick={() => setOpen((v) => !v)}
         className="rounded-xl bg-emerald-200/20 p-2 text-white hover:bg-emerald-200/30"
@@ -114,25 +126,36 @@ function MobileMenu() {
           />
         </div>
       </button>
+
+      {/* Dropdown */}
       <AnimatePresence>
         {open && (
           <motion.nav
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="mt-2 overflow-hidden rounded-2xl border border-emerald-200/30 bg-emerald-200/20 p-2 text-white backdrop-blur"
+            className="mt-3 overflow-hidden rounded-2xl border border-emerald-200/30 bg-emerald-900/80 p-4 text-white backdrop-blur"
           >
-            {items.map((n) => (
-              <AnimatedLink key={n.to} to={n.to} onClick={() => setOpen(false)}>
-                {n.label}
-              </AnimatedLink>
-            ))}
+            <div className="flex flex-col gap-3">
+              {menuItems.map((n) => (
+                <AnimatedLink
+                  key={n.to}
+                  to={n.to}
+                  onClick={() => setOpen(false)}
+                >
+                  <span className="block w-full rounded-lg bg-emerald-700/40 px-3 py-2 text-center text-base hover:bg-emerald-600/60">
+                    {n.label}
+                  </span>
+                </AnimatedLink>
+              ))}
+            </div>
           </motion.nav>
         )}
       </AnimatePresence>
     </div>
   );
 }
+
 
 // ---------- Header (emerald gradient) ----------
 function Header() {
