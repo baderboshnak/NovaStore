@@ -68,7 +68,12 @@ function UserMenu() {
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-white/90">Hi, {user.name}</span>
-      
+      <button
+        onClick={logout}
+        className="hidden sm:flex rounded-xl bg-emerald-200/20 px-3 py-1.5 text-sm text-white hover:bg-emerald-200/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+      >
+        Logout
+      </button>
     </div>
   );
 }
